@@ -27,7 +27,7 @@ namespace LastFMAPI
 
         static async Task Main(string[] args)
         {
-            string path = (args.Length == 0) ? Console.ReadLine().Replace("\"", "") ?? "" : args[0].Replace("\"", "");
+            string path = ((args.Length == 0) ? Console.ReadLine() ?? "" : args[0]).Replace("\"", "");
 
             LastFM_API fmApi = new LastFM_API(apikey);
          
