@@ -30,7 +30,7 @@ namespace LastFMAPI
             string path = ((args.Length == 0) ? Console.ReadLine() ?? "" : args[0]).Replace("\"", "");
 
             LastFM_API fmApi = new LastFM_API(apikey);
-         
+
             if (IO.File.Exists(path))
             {
                 if (IsMusicFile(Path.GetFileName(path)))
@@ -46,12 +46,12 @@ namespace LastFMAPI
                     string url = "";
 
                     Console.WriteLine("Method: album.search");
-                    url = await fmApi.AlbumGetInfo_GetAlbumImage(Artist, Album, AlbumGetInfo_FindAlbumImg);
+                    url = await fmApi.AlbumGetInfo(AlbumGetInfo_FindAlbumImg, Artist, Album);
 
                     if (string.IsNullOrEmpty(url))
                     {
                         Console.WriteLine("Method: album.getinfo");
-                        url = await fmApi.AlbumSearch_GetAlbumImage(Album, AlbumSearch_FindAlbumImg);
+                        url = await fmApi.AlbumSearch(AlbumSearch_FindAlbumImg, Album: Album);
                     }
 
                     if (!string.IsNullOrEmpty(url))
@@ -68,7 +68,7 @@ namespace LastFMAPI
             }
         }
 
-        static string AlbumSearch_FindAlbumImg(JObject Json, string AlbumRequest)
+        static string AlbumSearch_FindAlbumImg(JObject Json, string ArtistRequest, string AlbumRequest)
         {
             Dictionary<string, string> ImageList = new Dictionary<string, string>();
 
@@ -78,24 +78,31 @@ namespace LastFMAPI
 
             foreach (dynamic Album in Albums)
             {
-                string name = Album.name;
-                JArray Images = Album.image;
-                if 
-                (
-                    name == AlbumRequest |
-                    name.ToLower() == AlbumRequest.ToLower() |
-                    name.ToLower().Replace(" ", "") == AlbumRequest.ToLower().Replace(" ", "")
-                )
+                string Artist = Album.artist;
+                bool ArtistUnknown = string.IsNullOrWhiteSpace(ArtistRequest) | string.IsNullOrWhiteSpace(Artist);
+                if (Artist.ToLower() == ArtistRequest.ToLower() | ArtistUnknown)
                 {
-                    foreach (dynamic Image in Images)
+                    string name = Album.name;
+                    JArray Images = Album.image;
+                    if
+                    (
+                        name == AlbumRequest |
+                        name.ToLower() == AlbumRequest.ToLower() |
+                        name.ToLower().Replace(" ", "") == AlbumRequest.ToLower().Replace(" ", "") |
+                        Artist.ToLower() == ArtistRequest.ToLower() |
+                        ArtistUnknown
+                    )
                     {
-                        string url = Image["#text"];
-                        string size = Image["size"];
-                        if (!string.IsNullOrEmpty(url) & !string.IsNullOrEmpty(size))
-                            ImageList.Add(size, url);
+                        foreach (dynamic Image in Images)
+                        {
+                            string url = Image["#text"];
+                            string size = Image["size"];
+                            if (!string.IsNullOrEmpty(url) & !string.IsNullOrEmpty(size))
+                                ImageList.Add(size, url);
+                        }
+                        if (ImageList.Count > 0)
+                            break;
                     }
-                    if (ImageList.Count > 0)
-                        break;
                 }
             }
 

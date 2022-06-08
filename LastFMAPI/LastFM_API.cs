@@ -13,34 +13,38 @@ namespace fmapi
         private string key { get; set; }
         public LastFM_API(string _key) { key = _key; }
 
-        public async Task<string> AlbumSearch_GetAlbumImage(string Album, Func<JObject, string, string> FindUrl)
+        public async Task<string> AlbumSearch(Func<JObject, string, string, string> FindValue, string Album, string Artist = null)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(Album))
+                    throw new ArgumentNullException();
+
                 string Url = $"{BaseURL}?method=album.search&album={UriEnc(Album)}";
                 JObject Json = await JsonResponse(Url);
 
-                return FindUrl(Json, Album);
+                return FindValue(Json, Artist, Album);
             }
-            catch (HttpRequestException)
-            {
-                Console.WriteLine("Unable to make a request.");
+            catch
+            { 
                 return "";
             }
         }
 
-        public async Task<string> AlbumGetInfo_GetAlbumImage(string Artist, string Album, Func<JObject, string> FindUrl)
+        public async Task<string> AlbumGetInfo(Func<JObject, string> FindValue, string Album, string Artist = null, string Track = null)
         {
             try
-            { 
-                string Url = $"{BaseURL}?method=album.getinfo&artist={UriEnc(Artist)}&album={UriEnc(Album)}";
+            {
+                if (string.IsNullOrWhiteSpace(Album) | (string.IsNullOrWhiteSpace(Artist) & string.IsNullOrWhiteSpace(Track)))
+                    throw new ArgumentNullException();
+
+                string Url = $"{BaseURL}?method=album.getinfo&album={UriEnc(Album)}" + (!string.IsNullOrWhiteSpace(Track) ? $"&track={UriEnc(Track)}" : $"&artist={UriEnc(Artist)}");
                 JObject Json = await JsonResponse(Url);
 
-                return FindUrl(Json);
+                return FindValue(Json);
             }
-            catch (HttpRequestException)
+            catch
             {
-                Console.WriteLine("Unable to make a request.");
                 return "";
             }
         }
